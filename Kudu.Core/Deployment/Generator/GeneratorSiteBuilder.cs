@@ -39,7 +39,6 @@ namespace Kudu.Core.Deployment.Generator
             }
             catch (Exception ex)
             {
-                buildLogger.Log(ex);
                 tcs.SetException(ex);
             }
 
@@ -74,7 +73,7 @@ namespace Kudu.Core.Deployment.Generator
                     scriptGenerator.ExecuteWithProgressWriter(buildLogger, context.Tracer, _ => false, _ => false, scriptGeneratorCommand);
                 }
             }
-            catch (CommandLineException ex)
+            catch (Exception ex)
             {
                 context.Tracer.TraceError(ex);
 
@@ -85,8 +84,16 @@ namespace Kudu.Core.Deployment.Generator
 
                 // Add the output stream and the error stream to the log for better
                 // debugging
-                buildLogger.Log(ex.Output, LogEntryType.Error);
-                buildLogger.Log(ex.Error, LogEntryType.Error);
+                CommandLineException commandException = ex as CommandLineException;
+                if (commandException != null)
+                {
+                    buildLogger.Log(commandException.Output, LogEntryType.Error);
+                    buildLogger.Log(commandException.Error, LogEntryType.Error);
+                }
+                else
+                {
+                    buildLogger.Log(ex);
+                }
 
                 throw;
             }

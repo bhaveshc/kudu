@@ -64,7 +64,7 @@ namespace Kudu.Core.Deployment.Generator
             {
                 exe.ExecuteWithProgressWriter(customLogger, context.Tracer, ExternalCommandFactory.ShouldFilterOutMsBuildWarnings, ExternalCommandFactory.ShouldFilterOutNodeRedundantOutput, command, String.Empty);
             }
-            catch (CommandLineException ex)
+            catch (Exception ex)
             {
                 context.Tracer.TraceError(ex);
 
@@ -75,8 +75,16 @@ namespace Kudu.Core.Deployment.Generator
 
                 // Add the output stream and the error stream to the log for better
                 // debugging
-                customLogger.Log(ex.Output, LogEntryType.Error);
-                customLogger.Log(ex.Error, LogEntryType.Error);
+                CommandLineException commandException = ex as CommandLineException;
+                if (commandException != null)
+                {
+                    customLogger.Log(commandException.Output, LogEntryType.Error);
+                    customLogger.Log(commandException.Error, LogEntryType.Error);
+                }
+                else
+                {
+                    customLogger.Log(ex);
+                }
 
                 throw new CommandLineException(ex.Message, ex);
             }
